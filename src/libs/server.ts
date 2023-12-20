@@ -24,9 +24,10 @@ export class Server {
 
     private setUp(): Promise<void> {
         return new Promise((resolve, reject) => {
+
             this.router.get("/", (req: Request, res: Response, next: NextFunction) => {
-                return res.status(200).json({
-                    message: "s"
+                return res.status(200).sendFile("index.html", {
+                    root: "./src/pages"
                 })
             })
             resolve()

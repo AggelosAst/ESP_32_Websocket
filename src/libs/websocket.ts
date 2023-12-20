@@ -14,11 +14,7 @@ export class WebsocketServer {
 
     public async listen() {
         this.wsServer.on("connection", (socket: WebSocket, request) => {
-            setInterval(() => {
-                socket.send(JSON.stringify({
-                    "type": "REQUEST_DATA"
-                }))
-            }, 1000)
+
             socket.on("message", (data: WebSocket.RawData, isBinary: boolean) => {
                 let payload!: payloadData
                 try {
@@ -31,6 +27,12 @@ export class WebsocketServer {
                 switch (payload.type) {
                     case "RECEIVE_DATA":
                         console.log(`[R]: ${payload.type}`);
+                         for (const Client of this.wsServer.clients) {
+                            Client.send(JSON.stringify({
+                                type: payload.type,
+                                data: payload.data
+                            }))
+                        }
                         break;
                     case "HELLO":
                         break;
