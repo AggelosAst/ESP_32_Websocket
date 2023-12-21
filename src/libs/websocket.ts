@@ -25,11 +25,11 @@ export class WebsocketServer {
                     }))
                 }
                 switch (payload.type) {
-                    case "RECEIVE_DATA":
+                    case "SEND_DATA":
                         console.log(`[R]: ${payload.type}`);
                          for (const Client of this.wsServer.clients) {
                             Client.send(JSON.stringify({
-                                type: payload.type,
+                                type: "RECEIVE_DATA",
                                 data: payload.data
                             }))
                         }
@@ -38,7 +38,7 @@ export class WebsocketServer {
                         break;
                     case "PING":
                         socket.send(JSON.stringify({
-                            data: "PONG"
+                            type: "PONG"
                         }))
                         break;
                 }

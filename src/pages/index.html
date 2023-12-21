@@ -59,21 +59,46 @@
 </div>
 <div class="container">
     <div class="box">
-        <h1 class="box-title">Relay Status</h1>
+        <h1 class="box-title">Temp Data</h1>
         <h1 class="box-desc">N/A</h1>
-        <h1 class="box-desc">Info: N/A</h1>
+        <h1 class="box-desc" id="info">Info: N/A</h1>
     </div>
 </div>
 <script defer>
+    class Classifier {
+        classify(temp) {
+            let tempWarning = "None"
+            if (typeof temp == "number") {
+                if (temp > 30) {
+                    tempWarning = "Warning: High temperature detected!"
+                }
+                else if (temp < 10) {
+                    tempWarning = "Warning: Low temperature detected!"
+                } else {
+                    tempWarning = "Results within expected ranges."
+                }
+                return tempWarning
+            }
+        }
+    }
     class Client {
         wsClient = undefined
-
+        ping_pong_sequence() {
+            if (this.wsClient !== undefined) {
+                setInterval(() => {
+                    this.wsClient.send(JSON.stringify({
+                        type: "PING"
+                    }))
+                }, 5000)
+            }
+        }
         connect() {
            try {
                this.wsClient = new WebSocket("ws://79.166.203.186:4040/", "ws")
                this.wsClient.onopen = (ws) => {
                    console.log("[WS]: EMIT", ws?.type)
                    this.listen()
+                   this.ping_pong_sequence()
                    return "OK"
                }
                return "OK"
@@ -95,6 +120,7 @@
             }, 100)
         }
         listen() {
+            const classifier = new Classifier();
             this.wsClient.onmessage = (msg) => {
                 const message = msg?.data
                 let jsonData;
@@ -113,7 +139,12 @@
                         case "RECEIVE_DATA": { //Jump immediately to this case no label
                             console.log("[WS]: ESP32 is sending back data")
                             console.log(jsonData["data"])
-                            document.querySelector(".container .box .box-desc").textContent = jsonData["data"]
+                            document.querySelector(".container .box .box-desc").textContent = `${jsonData["data"]}°C`
+                            document.querySelector(".container .box #info").textContent = `Info: ${classifier.classify(jsonData["data"])}`
+                            break
+                        }
+                        case "PONG": { //Jump immediately to this case no label
+                            console.log(`[WS]: Ping received`)
                             break
                         }
                     }
@@ -125,15 +156,15 @@
     document.addEventListener("DOMContentLoaded", async () => {
         const pageTitle = document.querySelector(".container2 .page-title h1")
         pageTitle.textContent = "Initializing"
-        const ws = new Client()
-        const result = ws.connect()
-        console.log(result)
+        const ws = new Client();
+        const result = ws.connect();
+        console.log(result);
         if (result.includes("OK")) {
-            console.log("[CLIENT]: IS_OK")
-            pageTitle.textContent = "READING..."
-            ws.indicate()
+            console.log("[CLIENT]: IS_OK");
+            pageTitle.textContent = "READING...";
+            ws.indicate();
         } else {
-            pageTitle.textContent = "Error occured"
+            pageTitle.textContent = "Error occurred";
         }
     })
 </script>
